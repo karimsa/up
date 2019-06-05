@@ -18,7 +18,6 @@ export async function listServers({ target }) {
 	}
 
 	for (const server of await fetchServers({ name, target })) {
-		console.log(server)
 		console.log(
 			`> ${chalk.bold(server.name)} - ${chalk.green(server.status)} (${
 				server.id
