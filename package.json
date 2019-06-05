@@ -1,6 +1,7 @@
 {
 	"name": "@karimsa/up",
 	"version": "0.0.0",
+	"main": "./dist/index.js",
 	"bin": {
 		"up": "./bin/up"
 	},
@@ -16,6 +17,7 @@
 		"chalk": "^2.4.2",
 		"lodash": "^4.17.11",
 		"mz": "^2.7.0",
+		"pkgcloud": "^2.0.0",
 		"prompts": "^2.1.0",
 		"rc": "^1.2.8"
 	}
