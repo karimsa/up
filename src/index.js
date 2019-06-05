@@ -5,16 +5,18 @@
 
 import minimist from 'minimist'
 
-import { deploy, login } from './commands'
+import { setDebug } from './debug'
+import { deploy, login, logout } from './commands'
 
 const argv = minimist(process.argv.slice(2), {
 	alias: {
 		help: 'h',
 		target: 't',
+		verbose: 'v',
 	},
 
 	string: ['target'],
-	boolean: ['help'],
+	boolean: ['help', 'verbose'],
 })
 const command = argv._[0] || 'deploy'
 
@@ -24,9 +26,11 @@ function showUsage() {
 	console.log('Commands:')
 	console.log('\tdeploy [default]\tdeploys your application')
 	console.log('\tlogin\tlogs into your provider')
+	console.log('\tlogout\tlogs out of your provider')
 	console.log('')
 	console.log('Options:')
 	console.log('\t-t, --target [target]\tthe env you wish to deploy to')
+	console.log('\t-v, --verbose\tenable verbose logging')
 	console.log('')
 	process.exit(1)
 }
@@ -36,12 +40,17 @@ if (argv.help) {
 }
 
 async function main() {
+	setDebug(argv.verbose)
+
 	switch (command) {
 		case 'deploy':
 			return deploy({ target: argv.target })
 
 		case 'login':
 			return login()
+
+		case 'logout':
+			return logout()
 
 		default:
 			console.error(`Unknown command: '${command}'`)

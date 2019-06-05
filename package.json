@@ -1,24 +1,27 @@
 {
-	"name": "@karimsa/up",
-	"version": "0.0.0",
-	"main": "./dist/index.js",
-	"bin": {
-		"up": "./bin/up"
-	},
-	"scripts": {
-		"build": "babel src -d dist"
-	},
-	"devDependencies": {
-		"@babel/cli": "^7.4.4",
-		"@babel/core": "^7.4.5",
-		"@babel/preset-env": "^7.4.5"
-	},
-	"dependencies": {
-		"chalk": "^2.4.2",
-		"lodash": "^4.17.11",
-		"mz": "^2.7.0",
-		"pkgcloud": "^2.0.0",
-		"prompts": "^2.1.0",
-		"rc": "^1.2.8"
-	}
+  "main": "./dist/index.js",
+  "up": {
+    "provider": "digitalocean"
+  },
+  "name": "@karimsa/up",
+  "version": "0.0.0",
+  "bin": {
+    "up": "./bin/up"
+  },
+  "scripts": {
+    "build": "babel src -d dist"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.4.4",
+    "@babel/core": "^7.4.5",
+    "@babel/preset-env": "^7.4.5"
+  },
+  "dependencies": {
+    "chalk": "^2.4.2",
+    "lodash": "^4.17.11",
+    "mz": "^2.7.0",
+    "pkgcloud": "^2.0.0",
+    "prompts": "^2.1.0",
+    "rc": "^1.2.8"
+  }
 }

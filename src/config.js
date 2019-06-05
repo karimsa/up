@@ -8,6 +8,8 @@ import { fs } from 'mz'
 import * as path from 'path'
 import _ from 'lodash'
 
+import { debug } from './debug'
+
 function loadConfig(projectDirectory = process.cwd()) {
 	if (projectDirectory === '/') {
 		throw new Error(`Failed to find a 'package.json'`)
@@ -24,14 +26,12 @@ function loadConfig(projectDirectory = process.cwd()) {
 		return {
 			projectDirectory,
 			pkg: {
-				...pkg,
-
 				main: 'index.js',
 				up: {
-					...(pkg.up || {}),
-
 					provider: 'digitalocean',
+					...(pkg.up || {}),
 				},
+				...pkg,
 			},
 		}
 	} catch (_) {
@@ -53,11 +53,11 @@ export function getGlobal(key) {
 }
 
 export function setLocal(key, value) {
-	_.set(key, value, localConfig)
+	_.set(localConfig, key, value)
 }
 
 export function setGlobal(key, value) {
-	_.set(key, value, globalConfig)
+	_.set(globalConfig, key, value)
 }
 
 export async function flush() {
@@ -65,11 +65,14 @@ export async function flush() {
 		localConfig.projectDirectory,
 		'package.json',
 	)
-	console.log(`Writing local config: ${localConfigPath}`)
-	console.log(`Writing global config: ${globalConfig.config}`)
+	const globalConfigPath =
+		globalConfig.config || path.join(process.env.HOME, '.uprc')
+
+	debug(`Writing local config: ${localConfigPath}`)
+	debug(`Writing global config: ${globalConfig.config}`)
 
 	return Promise.all([
 		fs.writeFile(localConfigPath, JSON.stringify(localConfig.pkg, null, 2)),
-		fs.writeFile(globalConfig.config, JSON.stringify(globalConfig, null, '\t')),
+		fs.writeFile(globalConfigPath, JSON.stringify(globalConfig, null, '\t')),
 	])
 }
