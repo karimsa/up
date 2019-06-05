@@ -17,6 +17,15 @@ import { debug } from '../debug'
 export const createServerName = (name, target, num) =>
 	`${name.replace(/^\@([a-zA-Z]+)\/([a-zA-Z\-_]+)$/, '$1-$2')}-${target}-${num}`
 
+export async function execSsh(ssh, ...args) {
+	const { code, stdout, stderr } = await ssh.execCommand(...args)
+	debug({ args, stdout, stderr })
+	if (code !== 0) {
+		throw new Error(stderr)
+	}
+	return { stdout, stderr }
+}
+
 let serverList
 export async function fetchServers({ name, target }) {
 	if (!name || !target) {
@@ -82,18 +91,46 @@ export async function initServer({ name, target, instanceNumber }) {
 	}
 
 	debug(`Connected to server: ${serverName}`)
-	await client.exec(`apt-get`, ['install', '-yq', 'git', 'build-essential'], {
+	debug(
+		await execSsh(client, `apt-get install -yq git build-essential`, {
 		env: {
 			DEBIAN_FRONTEND: 'noninteractive',
 		},
-	})
-	await client.execCommand(
+		}),
+	)
+	debug(
+		await execSsh(
+			client,
 		'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash',
+		),
 	)
-	await client.execCommand(
-		'source ~/.nvm/nvm.sh && nvm install 10 && npm install -g forever',
+	debug(
+		await execSsh(
+			client,
+			'source ~/.nvm/nvm.sh && nvm install 10 && nvm alias default 10 && npm install -g forever',
+		),
 	)
-	await client.mkdir('~/app')
+	debug(
+		await execSsh(
+			client,
+			`mkdir -p ~/app && echo "require('http').createServer((_, res) => res.end('Hello, world!')).listen(process.env.PORT)" > ~/app/app.js`,
+		),
+	)
+	debug(
+		await execSsh(
+			client,
+			`echo "require('dotenv/config'),require('./app')" > ~/app/index.js`,
+		),
+	)
+	debug(
+		await execSsh(client, 'cd ~/app && source ~/.nvm/nvm.sh && npm i dotenv'),
+	)
+	debug(
+		await execSsh(
+			client,
+			'source ~/.nvm/nvm.sh && forever stopall && forever start ~/app',
+		),
+	)
 
 	debug(`Disconnecting from server: ${serverName}`)
 	await client.dispose()

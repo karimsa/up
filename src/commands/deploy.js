@@ -6,35 +6,51 @@
 import request from 'request-promise-native'
 import chalk from 'chalk'
 import _ from 'lodash'
+import SSHClient from 'node-ssh'
+import Bundler from 'parcel-bundler'
+import * as path from 'path'
+import { fs } from 'mz'
+import * as tmp from 'tmp-promise'
+import * as ansi from 'ansi-escapes'
+import * as rimraf from 'rimraf'
 
 import * as config from '../config'
+import { debug } from '../debug'
 import { getAuthentication } from './login'
-import * as pkgcloud from '../pkgcloud'
+import { execSsh, fetchServers, initServer } from './scale'
 
-const createServerName = (name, num) =>
-	`${name.replace(/^\@([a-zA-Z]+)\/([a-zA-Z\-_]+)$/, '$1-$2')}-${num}`
-
-async function fetchServers({ client, projectName }) {
-	const servers = []
-	for (const server of await client.getServers()) {
-		const matches = server.name.match(
-			new RegExp(createServerName(projectName, '([0-9]+)')),
-		)
-		if (matches) {
-			servers.push({
-				instanceNumber: Number(matches[1]),
-				server,
-			})
-		}
-	}
-	return servers
-}
-
-async function deployToServer({ server }) {
+async function deployToServer({ server, dist }) {
+	const ssh = new SSHClient()
 	const [publicIP] = server.addresses.public
-	console.log(
-		`> Deploying to: ${chalk.bold(server.name)} (${chalk.green(publicIP)})`,
+	await ssh.connect({
+		host: publicIP,
+		username: 'root',
+		privateKey: path.resolve(process.env.HOME, '.ssh', 'id_rsa'),
+	})
+
+	// Get home path
+	const { stdout: home } = await execSsh(ssh, 'cd && pwd')
+
+	const files = await fs.readdir(dist)
+	if (files.length !== 1) {
+		throw new Error(
+			`Unsure how to deploy multiple entrypoints: ${files.join(', ')}`,
+		)
+	}
+	const main = files[0]
+
+	debug(`Uploading ${main} to ${server.name}`)
+	await ssh.putFile(path.join(dist, main), `${home}/app/app.js`)
+
+	console.log(`> Restarting application server`)
+	debug(
+		await execSsh(
+			ssh,
+			'source ~/.nvm/nvm.sh && nvm use 10 && forever restart ~/app',
+		),
 	)
+
+	await ssh.dispose()
 }
 
 export async function deploy({ target }) {
@@ -49,8 +65,8 @@ export async function deploy({ target }) {
 	}
 	console.log(`> Provider set to: ${chalk.bold(provider)}`)
 
-	const projectName = config.getLocal('pkg.name')
-	if (!projectName) {
+	const name = config.getLocal('pkg.name')
+	if (!name) {
 		throw new Error(`Project does not have a name`)
 	}
 
@@ -68,45 +84,72 @@ export async function deploy({ target }) {
 				},
 				json: true,
 				body: {
-					name: projectName,
+					name,
 					purpose:
 						config.getLocal('pkg.description') ||
-						`Deployment target for: ${projectName}`,
+						`Deployment target for: ${name}`,
 					environment: target,
 				},
 			})
 		} catch (err) {
 			if (_.get(err, 'error.id') !== 'conflict') {
 				console.error(
-					`> Failed to create project: '${chalk.bold(
-						projectName,
-					)}' on digitalocean`,
+					`> Failed to create project: '${chalk.bold(name)}' on digitalocean`,
 				)
 				throw err
 			}
 		}
 	}
 
+	// Bundle the entrypoint
+	const main = config.getLocal('pkg.main') || 'index.js'
+	process.stdout.write(`> Bundling: ${main} ...`)
+	const dist = await tmp.dir()
+	const startTime = Date.now()
+	const bundler = new Bundler(path.resolve(config.projectDirectory, main), {
+		target: 'node',
+		bundleNodeModules: true,
+		watch: false,
+		outDir: dist.path,
+		sourceMaps: false,
+		logLevel: 1,
+	})
+	await bundler.bundle()
+	console.log(
+		`\r> Bundled in ${chalk.green(Date.now() - startTime + 'ms')}.${
+			ansi.eraseEndLine
+		}`,
+	)
+
 	// Grab current servers off digitalocean
-	const client = pkgcloud.init()
-	const servers = await fetchServers({ client, projectName })
+	const servers = await fetchServers({ target, name })
 
 	if (servers.length === 0) {
-		const name = createServerName(projectName, 1)
-		console.log(
-			`> No servers found running. Creating '${chalk.bold(name)}' ...`,
-		)
+		console.log(`> No servers found running. Adding one ...`)
 		servers.push(
-			await client.createServer({
+			await initServer({
 				name,
-				image: 'ubuntu-18-04-x64',
-				flavor: 's-1vcpu-2gb',
-				region: 'tor1',
-				keyname: config.getLocal('keynames') || config.getGlobal('keynames'),
+				target,
 			}),
 		)
 	}
 
 	// Deploy to all instances in parallel
-	await Promise.all(servers.map(({ server }) => deployToServer({ server })))
+	console.log(`> Deploying to:`)
+	console.log(
+		servers
+			.map(
+				server =>
+					` - ${chalk.bold(server.name)} (${chalk.green(
+						server.addresses.public[0],
+					)})`,
+			)
+			.join('\n'),
+	)
+	await Promise.all(
+		servers.map(server => deployToServer({ server, dist: dist.path })),
+	)
+
+	// Cleanup dist
+	await rimraf.sync(dist.path)
 }
