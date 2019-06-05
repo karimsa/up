@@ -7,17 +7,18 @@ import minimist from 'minimist'
 import chalk from 'chalk'
 
 import { setDebug, debug } from './debug'
-import { deploy, login, logout, scale, listServers } from './commands'
+import { deploy, login, logout, scale, listServers, logs } from './commands'
 
 const argv = minimist(process.argv.slice(2), {
 	alias: {
 		help: 'h',
 		target: 't',
 		verbose: 'v',
+		follow: 'f',
 	},
 
 	string: ['target'],
-	boolean: ['help', 'verbose'],
+	boolean: ['help', 'verbose', 'follow'],
 })
 const command = argv._[0] || 'deploy'
 
@@ -33,6 +34,7 @@ function showUsage() {
 	console.log('Options:')
 	console.log('\t-t, --target [target]\tthe env you wish to deploy to')
 	console.log('\t-v, --verbose\tenable verbose logging')
+	console.log('\t-f, --follow\ttail the logs')
 	console.log('')
 	process.exit(1)
 }
@@ -52,7 +54,7 @@ async function main() {
 
 	switch (command) {
 		case 'deploy':
-			return deploy({ target: argv.target })
+			return deploy({ target })
 
 		case 'login':
 			return login()
@@ -92,6 +94,9 @@ async function main() {
 		case 'ls':
 		case 'list':
 			return listServers({ target })
+
+		case 'logs':
+			return logs({ target, follow: argv.follow })
 
 		default:
 			console.error(`Unknown command: '${command}'`)
