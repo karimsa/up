@@ -8,6 +8,26 @@ import chalk from 'chalk'
 
 import * as config from '../config'
 
+export function getAuthentication() {
+	const provider =
+		config.getLocal('pkg.up.provider') || config.getGlobal('defaultProvider')
+	switch (provider) {
+		case 'digitalocean':
+			const token = config.getGlobal('auth.digitalocean.apiKey')
+			if (token) {
+				return { provider, token }
+			}
+			return
+
+		case undefined:
+			throw new Error(`Provider not specified in 'package.json'`)
+
+		default:
+			console.error(`Unknown provider: ${chalk.red(provider)}`)
+			process.exit(1)
+	}
+}
+
 export async function login() {
 	const provider = config.getLocal('pkg.up.provider')
 

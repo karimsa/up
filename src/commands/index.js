@@ -5,3 +5,5 @@
 
 export * from './deploy'
 export * from './login'
+export * from './scale'
+export * from './list'

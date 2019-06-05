@@ -4,9 +4,10 @@
  */
 
 import minimist from 'minimist'
+import chalk from 'chalk'
 
-import { setDebug } from './debug'
-import { deploy, login, logout } from './commands'
+import { setDebug, debug } from './debug'
+import { deploy, login, logout, scale, listServers } from './commands'
 
 const argv = minimist(process.argv.slice(2), {
 	alias: {
@@ -24,9 +25,10 @@ function showUsage() {
 	console.log('usage: up [command]')
 	console.log('')
 	console.log('Commands:')
-	console.log('\tdeploy [default]\tdeploys your application')
+	console.log('\tdeploy\tdeploys your application')
 	console.log('\tlogin\tlogs into your provider')
 	console.log('\tlogout\tlogs out of your provider')
+	console.log('\tscale [size]\tscales a service up or down')
 	console.log('')
 	console.log('Options:')
 	console.log('\t-t, --target [target]\tthe env you wish to deploy to')
@@ -36,6 +38,12 @@ function showUsage() {
 }
 
 if (argv.help) {
+	showUsage()
+}
+
+const target = argv.target || process.env.ENV_TARGET || 'development'
+if (!['development', 'staging', 'production'].includes(target)) {
+	console.error(`! Invalid target environment: '${target}'`)
 	showUsage()
 }
 
@@ -52,6 +60,39 @@ async function main() {
 		case 'logout':
 			return logout()
 
+		case 'scale':
+			let action
+			let size = argv._[1]
+			if (!size) {
+				console.error(`! Size is a required argument.`)
+				showUsage()
+			}
+			size = size.substr(1)
+
+			if (size[0] === '+') {
+				action = 'up'
+				size = Number(size.substr(1))
+			} else if (size[0] === '-') {
+				action = 'down'
+				size = Number(size.substr(1))
+			} else {
+				size = Number(size)
+			}
+
+			if (isNaN(size)) {
+				console.error(
+					`Please provide a valid size for your service, not '${chalk.red(
+						argv._[1],
+					)}'`,
+				)
+				showUsage()
+			}
+			return scale({ action, size, target })
+
+		case 'ls':
+		case 'list':
+			return listServers({ target })
+
 		default:
 			console.error(`Unknown command: '${command}'`)
 			showUsage()
@@ -59,6 +100,13 @@ async function main() {
 }
 
 main().catch(err => {
-	console.error(err.stack)
+	if (err.message) {
+		console.error(`${chalk.red('x')} ${err.message}`)
+		if (err.stack) {
+			debug(err.stack)
+		}
+	} else {
+		console.error(`${chalk.red('x')} ${err}`)
+	}
 	process.exit(1)
 })
