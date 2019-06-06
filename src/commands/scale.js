@@ -66,6 +66,7 @@ export async function initServer({ name, target, instanceNumber }) {
 			debug(
 				`Identified server ${serverName} to have ip ${chalk.green(publicIP)}`,
 			)
+			serverInfo.full = server
 			serverInfo.addresses = server.addresses
 			break
 		}
@@ -89,6 +90,7 @@ export async function initServer({ name, target, instanceNumber }) {
 		}
 	}
 
+	console.log(`> Setting up server: ${chalk.bold(serverName)}`)
 	debug(`Connected to server: ${serverName}`)
 	debug(
 		await execSsh(client, `apt-get install -yq git build-essential`, {
@@ -150,6 +152,8 @@ export async function initServer({ name, target, instanceNumber }) {
 
 	debug(`Disconnecting from server: ${serverName}`)
 	await client.dispose()
+
+	return serverInfo.full
 }
 
 export async function scale({ action, size, target }) {

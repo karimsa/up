@@ -144,6 +144,7 @@ export async function deploy({ target }) {
 			await initServer({
 				name,
 				target,
+				instanceNumber: 1,
 			}),
 		)
 	}
