@@ -21,7 +21,7 @@ export async function listServers({ target }) {
 		console.log(
 			`> ${chalk.bold(server.name)} - ${chalk.green(server.status)} (${
 				server.id
-			})`,
+			} - ${server.addresses.public[0]})`,
 		)
 	}
 }

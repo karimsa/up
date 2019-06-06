@@ -7,7 +7,16 @@ import minimist from 'minimist'
 import chalk from 'chalk'
 
 import { setDebug, debug } from './debug'
-import { deploy, login, logout, scale, listServers, logs } from './commands'
+import {
+	deploy,
+	login,
+	logout,
+	scale,
+	listServers,
+	logs,
+	env,
+	restart,
+} from './commands'
 
 const argv = minimist(process.argv.slice(2), {
 	alias: {
@@ -15,10 +24,11 @@ const argv = minimist(process.argv.slice(2), {
 		target: 't',
 		verbose: 'v',
 		follow: 'f',
+		all: 'a',
 	},
 
 	string: ['target'],
-	boolean: ['help', 'verbose', 'follow'],
+	boolean: ['help', 'verbose', 'follow', 'all'],
 })
 const command = argv._[0] || 'deploy'
 
@@ -97,6 +107,14 @@ async function main() {
 
 		case 'logs':
 			return logs({ target, follow: argv.follow })
+
+		case 'e':
+		case 'env':
+			return env({ target, argv })
+
+		case 'r':
+		case 'restart':
+			return restart({ target })
 
 		default:
 			console.error(`Unknown command: '${command}'`)

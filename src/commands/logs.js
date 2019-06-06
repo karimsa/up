@@ -25,9 +25,13 @@ async function showLogsFrom({ server, publicIP, follow }) {
 			{
 				stream: 'both',
 				onStdout: chunk =>
-					console.log(`[${chalk.bold(server.instanceNumber)}] ${chunk}`),
+					console.log(
+						`[${chalk.bold(server.instanceNumber)}] ${String(chunk).trim()}`,
+					),
 				onStderr: chunk =>
-					console.error(`! [${chalk.red(server.instanceNumber)}] ${chunk}`),
+					console.error(
+						`! [${chalk.red(server.instanceNumber)}] ${String(chunk).trim()}`,
+					),
 			},
 		),
 	)

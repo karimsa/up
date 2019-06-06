@@ -3,7 +3,6 @@
  * @copyright 2019-present Karim Alibhai. All rights reserved.
  */
 
-import request from 'request-promise-native'
 import chalk from 'chalk'
 import _ from 'lodash'
 import sleep from 'then-sleep'
@@ -93,15 +92,15 @@ export async function initServer({ name, target, instanceNumber }) {
 	debug(`Connected to server: ${serverName}`)
 	debug(
 		await execSsh(client, `apt-get install -yq git build-essential`, {
-		env: {
-			DEBIAN_FRONTEND: 'noninteractive',
-		},
+			env: {
+				DEBIAN_FRONTEND: 'noninteractive',
+			},
 		}),
 	)
 	debug(
 		await execSsh(
 			client,
-		'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash',
+			'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash',
 		),
 	)
 	debug(
@@ -113,7 +112,7 @@ export async function initServer({ name, target, instanceNumber }) {
 	debug(
 		await execSsh(
 			client,
-			`mkdir -p ~/app && echo "require('http').createServer((_, res) => res.end('Hello, world!')).listen(process.env.PORT)" > ~/app/app.js`,
+			`mkdir -p ~/app && echo "const server = require('http').createServer((_, res) => res.end('Hello, world!')).listen(process.env.PORT, () => console.log('Listening :' + server.address().port))" > ~/app/app.js`,
 		),
 	)
 	debug(
@@ -123,12 +122,29 @@ export async function initServer({ name, target, instanceNumber }) {
 		),
 	)
 	debug(
+		await execSsh(
+			client,
+			`echo 'NODE_ENV=production' > ~/app/.env && echo 'PORT=80' >> ~/app/.env`,
+		),
+	)
+	debug(
+		await client.putFile(path.resolve(process.env.HOME, '.npmrc'), '.npmrc'),
+	)
+	debug(
 		await execSsh(client, 'cd ~/app && source ~/.nvm/nvm.sh && npm i dotenv'),
 	)
 	debug(
 		await execSsh(
 			client,
-			'source ~/.nvm/nvm.sh && forever stopall && forever start ~/app',
+			'source ~/.nvm/nvm.sh && forever stopall && forever start --minUptime 5000 --spinSleepTime 1000 --workingDir ~/app ~/app',
+		),
+	)
+
+	// UFW config
+	debug(
+		await execSsh(
+			client,
+			`ufw allow 80 && ufw allow OpenSSH && yes | ufw enable`,
 		),
 	)
 
@@ -142,8 +158,9 @@ export async function scale({ action, size, target }) {
 		throw new Error(`Project does not have a name`)
 	}
 
+	const servers = await fetchServers({ name, target })
+
 	if (!action) {
-		const servers = await fetchServers({ name, target })
 		if (size > servers.length) {
 			size = size - servers.length
 			action = 'up'
@@ -175,7 +192,6 @@ export async function scale({ action, size, target }) {
 
 	// scale up
 	if (action === 'up') {
-		const servers = await fetchServers({ name, target })
 		const goals = []
 		for (let i = servers.length; i < servers.length + size; i++) {
 			goals.push(initServer({ name, target, instanceNumber: i }))
