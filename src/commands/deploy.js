@@ -28,9 +28,6 @@ async function deployToServer({ server, dist }) {
 		privateKey: path.resolve(process.env.HOME, '.ssh', 'id_rsa'),
 	})
 
-	// Get home path
-	const { stdout: home } = await execSsh(ssh, 'cd && pwd')
-
 	const files = await fs.readdir(dist)
 	if (files.length !== 1) {
 		throw new Error(
@@ -40,7 +37,24 @@ async function deployToServer({ server, dist }) {
 	const main = files[0]
 
 	debug(`Uploading ${main} to ${server.name}`)
-	await ssh.putFile(path.join(dist, main), `${home}/app/app.js`)
+	await ssh.putFile(path.join(dist, main), `app/app.js`)
+	await ssh.putFile(
+		path.join(config.projectDirectory, 'package.json'),
+		'app/package.json',
+	)
+	await ssh.putFile(
+		path.join(config.projectDirectory, 'package-lock.json'),
+		'app/package-lock.json',
+	)
+
+	debug(`Installing npm dependencies ...`)
+	debug(
+		await execSsh(ssh, `source ~/.nvm/nvm.sh && cd ~/app && npm i`, {
+			env: {
+				NODE_ENV: 'production',
+			},
+		}),
+	)
 
 	console.log(`> Restarting application server`)
 	debug(
@@ -108,11 +122,11 @@ export async function deploy({ target }) {
 	const startTime = Date.now()
 	const bundler = new Bundler(path.resolve(config.projectDirectory, main), {
 		target: 'node',
-		bundleNodeModules: true,
+		bundleNodeModules: false,
 		watch: false,
 		outDir: dist.path,
 		sourceMaps: false,
-		logLevel: 1,
+		logLevel: 2,
 	})
 	await bundler.bundle()
 	console.log(
