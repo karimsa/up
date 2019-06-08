@@ -7,9 +7,14 @@ import * as pkgcloud from 'pkgcloud'
 
 import { getAuthentication } from './commands/login'
 
-const compute = pkgcloud.compute.createClient(getAuthentication())
+const auth = getAuthentication()
+const compute = auth && pkgcloud.compute.createClient(auth)
 
 export function getServers(opts = {}) {
+	if (!auth) {
+		throw new Error(`User is not authenticated for provider!`)
+	}
+
 	return new Promise((resolve, reject) => {
 		compute.getServers(opts, (err, servers) => {
 			if (err) reject(err)
@@ -19,6 +24,10 @@ export function getServers(opts = {}) {
 }
 
 export function getServer(id) {
+	if (!auth) {
+		throw new Error(`User is not authenticated for provider!`)
+	}
+
 	return new Promise((resolve, reject) => {
 		compute.getServer(id, (err, servers) => {
 			if (err) reject(err)
@@ -28,6 +37,10 @@ export function getServer(id) {
 }
 
 export function createServer(opts) {
+	if (!auth) {
+		throw new Error(`User is not authenticated for provider!`)
+	}
+
 	return new Promise((resolve, reject) => {
 		compute.createServer(opts, (err, server, res) => {
 			if (err) reject(err)
@@ -38,6 +51,10 @@ export function createServer(opts) {
 }
 
 export function destroyServer(opts) {
+	if (!auth) {
+		throw new Error(`User is not authenticated for provider!`)
+	}
+
 	return new Promise((resolve, reject) => {
 		compute.destroyServer(opts, (err, server, res) => {
 			if (err) reject(err)

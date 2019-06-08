@@ -1,39 +1,39 @@
 {
-	"main": "./dist/index.js",
-	"up": {
-		"provider": "digitalocean"
-	},
-	"name": "@karimsa/up",
-	"version": "0.0.0",
-	"publishConfig": {
-		"access": "public"
-	},
-	"bin": {
-		"up": "./bin/up"
-	},
-	"scripts": {
-		"build": "babel src -d dist"
-	},
-	"devDependencies": {
-		"@babel/cli": "^7.4.4",
-		"@babel/core": "^7.4.5",
-		"@babel/preset-env": "^7.4.5"
-	},
-	"dependencies": {
-		"ansi-escapes": "^4.1.0",
-		"chalk": "^2.4.2",
-		"dotenv": "^8.0.0",
-		"lodash": "^4.17.11",
-		"mz": "^2.7.0",
-		"node-ssh": "^6.0.0",
-		"parcel-bundler": "^1.12.3",
-		"pkgcloud": "^2.0.0",
-		"prompts": "^2.1.0",
-		"rc": "^1.2.8",
-		"request": "^2.88.0",
-		"request-promise-native": "^1.0.7",
-		"rimraf": "^2.6.3",
-		"then-sleep": "^1.0.1",
-		"tmp-promise": "^2.0.1"
-	}
+  "main": "./dist/index.js",
+  "up": {
+    "provider": "digitalocean"
+  },
+  "name": "@karimsa/up",
+  "version": "0.0.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "up": "./bin/up"
+  },
+  "scripts": {
+    "build": "babel src -d dist"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.4.4",
+    "@babel/core": "^7.4.5",
+    "@babel/preset-env": "^7.4.5"
+  },
+  "dependencies": {
+    "ansi-escapes": "^4.1.0",
+    "chalk": "^2.4.2",
+    "dotenv": "^8.0.0",
+    "lodash": "^4.17.11",
+    "mz": "^2.7.0",
+    "node-ssh": "^6.0.0",
+    "parcel-bundler": "^1.12.3",
+    "pkgcloud": "^2.0.0",
+    "prompts": "^2.1.0",
+    "rc": "^1.2.8",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.7",
+    "rimraf": "^2.6.3",
+    "then-sleep": "^1.0.1",
+    "tmp-promise": "^2.0.1"
+  }
 }
