@@ -16,6 +16,7 @@ import {
 	logs,
 	env,
 	restart,
+	init,
 } from './commands'
 
 const argv = minimist(process.argv.slice(2), {
@@ -115,6 +116,10 @@ async function main() {
 		case 'r':
 		case 'restart':
 			return restart({ target })
+
+		case 'i':
+		case 'init':
+			return init({ target, fqdn: argv._[1] })
 
 		default:
 			console.error(`Unknown command: '${command}'`)

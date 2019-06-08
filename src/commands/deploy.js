@@ -3,7 +3,6 @@
  * @copyright 2019-present Karim Alibhai. All rights reserved.
  */
 
-import request from 'request-promise-native'
 import chalk from 'chalk'
 import _ from 'lodash'
 import SSHClient from 'node-ssh'
@@ -18,6 +17,7 @@ import * as config from '../config'
 import { debug } from '../debug'
 import { getAuthentication } from './login'
 import { execSsh, fetchServers, initServer } from './scale'
+import { init } from './init'
 
 async function deployToServer({ server, dist }) {
 	const ssh = new SSHClient()
@@ -84,34 +84,26 @@ export async function deploy({ target }) {
 		throw new Error(`Project does not have a name`)
 	}
 
-	const pkgcloudAuth = getAuthentication()
-	if (!pkgcloudAuth) {
+	if (!getAuthentication()) {
 		throw new Error(`User is not authenticated for: ${chalk.bold(provider)}`)
 	}
 
-	// For digitalocean, organize resources into a project
-	if (provider === 'digitalocean') {
-		try {
-			await request.post('https://api.digitalocean.com/v2/projects', {
-				auth: {
-					bearer: config.getGlobal('auth.digitalocean.apiKey'),
-				},
-				json: true,
-				body: {
-					name,
-					purpose:
-						config.getLocal('pkg.description') ||
-						`Deployment target for: ${name}`,
-					environment: target,
-				},
-			})
-		} catch (err) {
-			if (_.get(err, 'error.id') !== 'conflict') {
-				console.error(
-					`> Failed to create project: '${chalk.bold(name)}' on digitalocean`,
-				)
-				throw err
-			}
+	// Add `.cache` for parcel to `.gitignore
+	try {
+		const gitignore = (await fs.readFile(
+			path.resolve(config.projectDirectory, '.gitignore'),
+			'utf8',
+		)).split(/\r?\n/g)
+		if (!gitignore.includes('/.cache')) {
+			gitignore.push('/.cache')
+			await fs.writeFile(
+				path.resolve(config.projectDirectory, '.gitignore'),
+				gitignore.join('\r\n') + '\r\n',
+			)
+		}
+	} catch (err) {
+		if (!String(err).includes('ENOENT')) {
+			throw err
 		}
 	}
 
@@ -140,13 +132,7 @@ export async function deploy({ target }) {
 
 	if (servers.length === 0) {
 		console.log(`> No servers found running. Adding one ...`)
-		servers.push(
-			await initServer({
-				name,
-				target,
-				instanceNumber: 1,
-			}),
-		)
+		servers.push(await init({ target }))
 	}
 
 	// Deploy to all instances in parallel
