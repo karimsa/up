@@ -27,10 +27,6 @@ function loadConfig(projectDirectory = process.cwd()) {
 			projectDirectory,
 			pkg: {
 				main: 'index.js',
-				up: {
-					provider: 'digitalocean',
-					...(pkg.up || {}),
-				},
 				...pkg,
 			},
 		}
