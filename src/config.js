@@ -45,18 +45,24 @@ export function getLocal(key) {
 }
 
 export function getValue(key) {
-	return getLocal(key) || getGlobal(key)
+	const value = getLocal(`pkg.up.${key}`) || getGlobal(key)
+	debug(`Read config %O => %O`, key, value)
+	return value
 }
 
 export function getGlobal(key) {
 	if (key === 'defaultProvider') {
 		return 'digitalocean'
 	}
-	if (key === 'keyPaths') {
+	if (key === 'keyPath') {
 		if (process.env.UP_SSH_KEY) {
 			return process.env.UP_SSH_KEY
 		}
-		return path.resolve(process.env.HOME, '.ssh', 'id_rsa')
+
+		const pathToKey = path.resolve(process.env.HOME, '.ssh', 'id_rsa')
+		if (fs.existsSync(pathToKey)) {
+			return pathToKey
+		}
 	}
 	return _.get(globalConfig, key)
 }

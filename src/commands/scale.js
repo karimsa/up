@@ -28,10 +28,20 @@ export async function execSsh(ssh, ...args) {
 export async function connectServer(server) {
 	const ssh = new SSHClient()
 	const [publicIP] = server.addresses.public
+	const privateKey = config.getValue('keyPath')
+	if (!privateKey) {
+		throw new Error(`No private key found anywhere`)
+	}
+
+	debug(
+		`Connecting to server at ${publicIP} with key: ${config.getValue(
+			'keyPath',
+		)}`,
+	)
 	await ssh.connect({
 		host: publicIP,
 		username: 'root',
-		privateKey: config.getValue('keynames'),
+		privateKey,
 	})
 	return ssh
 }
@@ -102,6 +112,9 @@ export async function setupServer(serverInfo) {
 			client = await connectServer(serverInfo)
 			break
 		} catch (err) {
+			if (!String(err).match(/Connection refused|Connection timed out/)) {
+				throw err
+			}
 			debug(`Connection to ${serverInfo.name} failed: ${err.stack}`)
 			await sleep(1000)
 		}
