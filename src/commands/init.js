@@ -4,9 +4,11 @@
  */
 
 import chalk from 'chalk'
-import { dns, child_process } from 'mz'
+import { fs, dns, child_process } from 'mz'
 import ansi from 'ansi-escapes'
 import sleep from 'then-sleep'
+import * as path from 'path'
+import * as os from 'os'
 
 import { initServer, fetchServers } from './scale'
 import * as config from '../config'
@@ -17,6 +19,8 @@ import {
 } from '../loadbalancers'
 import { debug } from '../debug'
 import { getDomains, addDomain, getRecords, addRecord } from '../dns'
+import { createSSHKey } from '../ssh-keys'
+import { getCertificates, createCertificate } from '../certificates'
 
 export async function init({ target, fqdn }) {
 	const name = config.getLocal('pkg.name')
@@ -41,11 +45,26 @@ export async function init({ target, fqdn }) {
 	}
 	const subdomain = fqdn.length === 3 ? fqdn.shift() : null
 	const domain = fqdn.join('.')
+	const targetHost = (subdomain ? subdomain + '.' : '') + domain
+
+	const keynames = config.getLocal('keynames') || config.getGlobal('keynames')
+	if (!keynames) {
+		const defaultKeyPath = path.resolve(process.env.HOME, '.ssh', 'id_rsa.pub')
+		if (!(await fs.exists(defaultKeyPath))) {
+			throw new Error(`No ssh key found at: ${defaultKeyPath}`)
+		}
+
+		const { id } = await createSSHKey({
+			name: `up-cli on ${os.hostname()}`,
+			key: fs.readFileSync(defaultKeyPath, 'utf8'),
+		})
+		config.setGlobal('keynames', [id])
+		await config.flush()
+	}
 
 	const servers = await fetchServers({ name, target })
 	const server = await (function() {
 		if (servers.length === 0) {
-			console.log(`> Creating first server for: ${name}-${target}`)
 			return initServer({
 				name,
 				target,
@@ -54,6 +73,19 @@ export async function init({ target, fqdn }) {
 		}
 		return servers[0]
 	})()
+
+	const certificate = await (async function() {
+		const certs = await getCertificates({ domain: targetHost })
+		if (certs.length === 0) {
+			return createCertificate({ domain: targetHost })
+		}
+		return certs[0]
+	})()
+	if (!certificate) {
+		throw new Error(
+			`Failed to find/create a certificate for: ${chalk.bold(targetHost)}`,
+		)
+	}
 
 	const loadbalancer = await (async function() {
 		const lb = await getLoadBalancer({ name, target })
@@ -71,8 +103,12 @@ export async function init({ target, fqdn }) {
 			name,
 			target,
 			droplet_ids: [server.id],
+			certificate_id: certificate.id,
 		})
 	})()
+	if (!loadbalancer) {
+		throw new Error(`No loadbalancer was returned from creation`)
+	}
 
 	const domains = await getDomains()
 	if (!domains.find(d => d.name === domain)) {
@@ -97,6 +133,14 @@ export async function init({ target, fqdn }) {
 			name: subdomain || '@',
 			data: loadbalancer.ip,
 		})
+	} else if (record.data !== loadbalancer.ip) {
+		throw new Error(
+			`DNS entry for ${chalk.bold(
+				record.name + '.' + domain,
+			)} is pointing to ${chalk.red(record.data)} (instead of ${chalk.green(
+				loadbalancer.ip,
+			)})`,
+		)
 	} else {
 		console.log(
 			`> Found DNS entry: ${chalk.green(
@@ -107,7 +151,6 @@ export async function init({ target, fqdn }) {
 
 	dns.setServers(['8.8.8.8', '8.8.4.4'])
 
-	const targetHost = (subdomain ? subdomain + '.' : '') + domain
 	try {
 		await dns.lookup(targetHost)
 	} catch (_) {

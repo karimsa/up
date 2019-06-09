@@ -4,6 +4,7 @@
  */
 
 import * as config from './config'
+import { debug } from './debug'
 
 export const createLBName = ({ name, target }) =>
 	`${name.replace(/^\@([a-zA-Z]+)\/([a-zA-Z\-_]+)$/, '$1-$2')}-${target}`
@@ -39,25 +40,39 @@ export async function createLoadBalancer({
 	target,
 	algorithm,
 	droplet_ids,
+	certificate_id,
 }) {
-	await request.post('/', {
-		body: {
-			name: createLBName({ name, target }),
-			algorithm: algorithm || 'least_connections',
-			region: config.getLocal('region') || config.getGlobal('region') || 'tor1',
-			redirect_http_to_https: true,
-			forwarding_rules: [
-				{
-					entry_protocol: 'https',
-					entry_port: 444,
-					target_protocol: 'https',
-					target_port: 443,
-					tls_passthrough: true,
-				},
-			],
-			droplet_ids,
+	const body = {
+		name: createLBName({ name, target }),
+		algorithm: algorithm || 'least_connections',
+		region: config.getLocal('region') || config.getGlobal('region') || 'tor1',
+		redirect_http_to_https: true,
+		forwarding_rules: [
+			{
+				entry_protocol: 'https',
+				entry_port: 443,
+				target_protocol: 'http',
+				target_port: 80,
+				certificate_id,
+			},
+			{
+				entry_protocol: 'http',
+				entry_port: 80,
+				target_protocol: 'http',
+				target_port: 80,
+			},
+		],
+		health_check: {
+			protocol: 'tcp',
+			port: 80,
 		},
+		droplet_ids,
+	}
+	debug(`Loadbalancer args => %O`, body)
+	const res = await request.post('/', {
+		body,
 	})
+	return res.load_balancer
 }
 
 export async function getLoadBalancer({ name, target }) {
