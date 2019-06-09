@@ -8,7 +8,7 @@ import _ from 'lodash'
 import SSHClient from 'node-ssh'
 import Bundler from 'parcel-bundler'
 import * as path from 'path'
-import { fs } from 'mz'
+import { fs, child_process } from 'mz'
 import * as tmp from 'tmp-promise'
 import * as ansi from 'ansi-escapes'
 import * as rimraf from 'rimraf'
@@ -67,7 +67,7 @@ async function deployToServer({ server, dist }) {
 	await ssh.dispose()
 }
 
-export async function deploy({ target }) {
+export async function deploy({ target, skipBuild }) {
 	if (!target) {
 		throw new Error(`No deployment target specified!`)
 	}
@@ -105,6 +105,22 @@ export async function deploy({ target }) {
 		if (!String(err).includes('ENOENT')) {
 			throw err
 		}
+	}
+
+	// Run build step if one exists
+	if (!skipBuild && config.getLocal('pkg.scripts.build')) {
+		process.stdout.write(`> Running 'npm run build' ...`)
+		const buildStart = Date.now()
+		const [stdout, stderr] = await child_process.exec('npm run build', {
+			env: process.env,
+			cwd: config.projectDirectory,
+		})
+		debug(`'npm run build' => %O`, { stdout, stderr })
+		console.log(
+			`\r> Ran 'npm run build' in ${chalk.green(
+				Date.now() - buildStart + 'ms',
+			)}.${ansi.eraseEndLine}`,
+		)
 	}
 
 	// Bundle the entrypoint

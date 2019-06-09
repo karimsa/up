@@ -30,7 +30,7 @@ const argv = minimist(process.argv.slice(2), {
 	},
 
 	string: ['target'],
-	boolean: ['help', 'verbose', 'follow', 'all'],
+	boolean: ['help', 'verbose', 'follow', 'all', 'skipBuild'],
 })
 const command = argv._[0] || 'deploy'
 
