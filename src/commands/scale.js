@@ -48,7 +48,8 @@ export async function fetchServers({ name, target }) {
 }
 
 export async function initServer({ name, target, instanceNumber }) {
-	const keynames = config.getLocal('keynames') || config.getGlobal('keynames')
+	const keynames = config.getLocal('keynames') ||
+		config.getGlobal('keynames') || [process.env.UP_SSH_KEY]
 	if (!keynames) {
 		throw new Error(`No configured SSH keys were found`)
 	}
