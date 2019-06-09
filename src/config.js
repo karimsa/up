@@ -45,6 +45,9 @@ export function getLocal(key) {
 }
 
 export function getGlobal(key) {
+	if (key === 'defaultProvider') {
+		return 'digitalocean'
+	}
 	return _.get(globalConfig, key)
 }
 
