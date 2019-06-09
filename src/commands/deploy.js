@@ -5,7 +5,6 @@
 
 import chalk from 'chalk'
 import _ from 'lodash'
-import SSHClient from 'node-ssh'
 import Bundler from 'parcel-bundler'
 import * as path from 'path'
 import { fs, child_process } from 'mz'
@@ -16,17 +15,11 @@ import * as rimraf from 'rimraf'
 import * as config from '../config'
 import { debug } from '../debug'
 import { getAuthentication } from './login'
-import { execSsh, fetchServers, initServer } from './scale'
+import { execSsh, fetchServers, connectServer } from './scale'
 import { init } from './init'
 
 async function deployToServer({ server, dist }) {
-	const ssh = new SSHClient()
-	const [publicIP] = server.addresses.public
-	await ssh.connect({
-		host: publicIP,
-		username: 'root',
-		privateKey: config.getValue('keynames'),
-	})
+	const ssh = await connectServer(server)
 
 	const files = await fs.readdir(dist)
 	if (files.length !== 1) {

@@ -52,7 +52,7 @@ export function getGlobal(key) {
 	if (key === 'defaultProvider') {
 		return 'digitalocean'
 	}
-	if (key === 'keynames') {
+	if (key === 'keyPaths') {
 		if (process.env.UP_SSH_KEY) {
 			return process.env.UP_SSH_KEY
 		}

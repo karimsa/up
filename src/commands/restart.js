@@ -4,10 +4,8 @@
  */
 
 import chalk from 'chalk'
-import * as path from 'path'
-import SSHClient from 'node-ssh'
 
-import { fetchServers, execSsh } from './scale'
+import { fetchServers, execSsh, connectServer } from './scale'
 import * as config from '../config'
 import { debug } from '../debug'
 
@@ -19,19 +17,14 @@ export async function restart({ target }) {
 
 	return Promise.all(
 		(await fetchServers({ name, target })).map(server => {
-			const ssh = new SSHClient()
 			console.log(
 				`> Restarting application server on: ${chalk.bold(server.name)}`,
 			)
-			return ssh
-				.connect({
-					host: server.addresses.public[0],
-					username: 'root',
-					privateKey: config.getValue('keynames'),
-				})
-				.then(() => execSsh(ssh, `source ~/.nvm/nvm.sh && forever restart 0`))
-				.then(res => debug(res))
-				.then(() => ssh.dispose())
+			return connectServer(server).then(ssh => {
+				return execSsh(ssh, `source ~/.nvm/nvm.sh && forever restart 0`)
+					.then(res => debug(res))
+					.then(() => ssh.dispose())
+			})
 		}),
 	)
 }

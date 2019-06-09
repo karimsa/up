@@ -5,19 +5,12 @@
 
 import chalk from 'chalk'
 import dotenv from 'dotenv'
-import * as path from 'path'
-import SSHClient from 'node-ssh'
 
 import * as config from '../config'
-import { execSsh, fetchServers } from './scale'
+import { execSsh, fetchServers, connectServer } from './scale'
 
 async function readEnv({ server }) {
-	const ssh = new SSHClient()
-	await ssh.connect({
-		host: server.addresses.public[0],
-		username: 'root',
-		privateKey: config.getValue('keynames'),
-	})
+	const ssh = await connectServer(server)
 
 	const { stdout } = await execSsh(ssh, 'cat ~/app/.env')
 	const env = dotenv.parse(stdout)
@@ -26,12 +19,7 @@ async function readEnv({ server }) {
 }
 
 async function putEnv({ server, env }) {
-	const ssh = new SSHClient()
-	await ssh.connect({
-		host: server.addresses.public[0],
-		username: 'root',
-		privateKey: config.getValue('keynames'),
-	})
+	const ssh = await connectServer(server)
 
 	await ssh.execCommand('echo > ~/app/.env')
 	for (const key of Object.keys(env)) {

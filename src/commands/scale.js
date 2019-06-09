@@ -14,7 +14,7 @@ import * as pkgcloud from '../pkgcloud'
 import { debug } from '../debug'
 
 export const createServerName = (name, target, num) =>
-	`${name.replace(/^\@([a-zA-Z]+)\/([a-zA-Z\-_]+)$/, '$1-$2')}-${target}-${num}`
+	`${name.replace(/^@([a-zA-Z]+)\/([a-zA-Z\-_]+)$/, '$1-$2')}-${target}-${num}`
 
 export async function execSsh(ssh, ...args) {
 	const { code, stdout, stderr } = await ssh.execCommand(...args)
@@ -23,6 +23,17 @@ export async function execSsh(ssh, ...args) {
 		throw new Error(stderr)
 	}
 	return { stdout, stderr }
+}
+
+export async function connectServer(server) {
+	const ssh = new SSHClient()
+	const [publicIP] = server.addresses.public
+	await ssh.connect({
+		host: publicIP,
+		username: 'root',
+		privateKey: config.getValue('keynames'),
+	})
+	return ssh
 }
 
 let serverList
@@ -84,16 +95,11 @@ export async function setupServer(serverInfo) {
 		await sleep(1000)
 	}
 
-	const [publicIP] = serverInfo.addresses.public
-	const client = new SSHClient()
+	let client
 
 	while (true) {
 		try {
-			await client.connect({
-				host: publicIP,
-				username: 'root',
-				privateKey: config.getValue('keynames'),
-			})
+			client = await connectServer(serverInfo)
 			break
 		} catch (err) {
 			debug(`Connection to ${serverInfo.name} failed: ${err.stack}`)

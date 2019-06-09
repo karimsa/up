@@ -8,6 +8,7 @@ import chalk from 'chalk'
 import { fetchServers } from './scale'
 import * as config from '../config'
 import { getLoadBalancer } from '../loadbalancers'
+import { getSSHKeys } from '../ssh-keys'
 
 export async function listServers({ target }) {
 	const name = config.getLocal('pkg.name')
@@ -17,6 +18,26 @@ export async function listServers({ target }) {
 	if (!target) {
 		throw new Error(`Please specify a valid target environment`)
 	}
+
+	console.log(`> SSH Keys:`)
+	const keynames = config.getValue('keynames')
+	for (const sshKey of await getSSHKeys()) {
+		if (sshKey.name.startsWith('up-cli')) {
+			if (
+				keynames.includes(sshKey.id) ||
+				keynames.includes(sshKey.fingerprint)
+			) {
+				console.log(
+					` - ${chalk.bold(sshKey.name)} (${chalk.green(
+						sshKey.id,
+					)}) (${chalk.green('active')})`,
+				)
+			} else {
+				console.log(` - ${chalk.bold(sshKey.name)} (${chalk.green(sshKey.id)})`)
+			}
+		}
+	}
+	console.log()
 
 	console.log(`> Application servers:`)
 	for (const server of await fetchServers({ name, target })) {

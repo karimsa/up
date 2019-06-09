@@ -1,0 +1,17 @@
+{
+	"extends": ["standard", "plugin:prettier/recommended"],
+	"rules": {
+		"camelcase": "off",
+		"no-tabs": "off",
+		"indent": "off",
+		"no-mixed-spaces-and-tabs": "off",
+		"comma-dangle": ["error", "always-multiline"],
+		"space-before-function-paren": ["error", "never"],
+		"no-unused-vars": [
+			"warn",
+			{
+				"varsIgnorePattern": "_"
+			}
+		]
+	}
+}

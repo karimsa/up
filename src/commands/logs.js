@@ -4,20 +4,13 @@
  */
 
 import chalk from 'chalk'
-import SSHClient from 'node-ssh'
-import * as path from 'path'
 
-import { fetchServers } from './scale'
+import { fetchServers, connectServer } from './scale'
 import * as config from '../config'
 import { debug } from '../debug'
 
-async function showLogsFrom({ server, publicIP, follow }) {
-	const ssh = new SSHClient()
-	await ssh.connect({
-		host: publicIP,
-		username: 'root',
-		privateKey: config.getValue('keynames'),
-	})
+async function showLogsFrom({ server, follow }) {
+	const ssh = await connectServer(server)
 
 	debug(
 		await ssh.execCommand(
