@@ -17,6 +17,7 @@ import {
 	env,
 	restart,
 	init,
+	setup,
 } from './commands'
 
 const argv = minimist(process.argv.slice(2), {
@@ -65,7 +66,7 @@ async function main() {
 
 	switch (command) {
 		case 'deploy':
-			return deploy({ target })
+			return deploy({ target, skipBuild: argv.skipBuild })
 
 		case 'login':
 			return login()
@@ -120,6 +121,12 @@ async function main() {
 		case 'i':
 		case 'init':
 			return init({ target, fqdn: argv._[1] })
+
+		case 'setup':
+			if (!argv._[1]) {
+				throw new Error(`setup requires an instance ID`)
+			}
+			return setup({ id: argv._[1] })
 
 		default:
 			console.error(`Unknown command: '${command}'`)
