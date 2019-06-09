@@ -44,12 +44,19 @@ export function getLocal(key) {
 	return _.get(localConfig, key)
 }
 
+export function getValue(key) {
+	return getLocal(key) || getGlobal(key)
+}
+
 export function getGlobal(key) {
 	if (key === 'defaultProvider') {
 		return 'digitalocean'
 	}
-	if (key === 'keynames' && process.env.UP_SSH_KEY) {
-		return [process.env.UP_SSH_KEY]
+	if (key === 'keynames') {
+		if (process.env.UP_SSH_KEY) {
+			return [process.env.UP_SSH_KEY]
+		}
+		return path.resolve(process.env.HOME, '.ssh', 'id_rsa')
 	}
 	return _.get(globalConfig, key)
 }

@@ -25,7 +25,7 @@ async function deployToServer({ server, dist }) {
 	await ssh.connect({
 		host: publicIP,
 		username: 'root',
-		privateKey: path.resolve(process.env.HOME, '.ssh', 'id_rsa'),
+		privateKey: config.getValue('keynames'),
 	})
 
 	const files = await fs.readdir(dist)

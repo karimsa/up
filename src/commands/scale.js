@@ -92,7 +92,7 @@ export async function setupServer(serverInfo) {
 			await client.connect({
 				host: publicIP,
 				username: 'root',
-				privateKey: path.resolve(process.env.HOME, '.ssh', 'id_rsa'),
+				privateKey: config.getValue('keynames'),
 			})
 			break
 		} catch (err) {

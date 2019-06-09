@@ -27,7 +27,7 @@ export async function restart({ target }) {
 				.connect({
 					host: server.addresses.public[0],
 					username: 'root',
-					privateKey: path.resolve(process.env.HOME, '.ssh', 'id_rsa'),
+					privateKey: config.getValue('keynames'),
 				})
 				.then(() => execSsh(ssh, `source ~/.nvm/nvm.sh && forever restart 0`))
 				.then(res => debug(res))

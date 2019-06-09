@@ -16,7 +16,7 @@ async function readEnv({ server }) {
 	await ssh.connect({
 		host: server.addresses.public[0],
 		username: 'root',
-		privateKey: path.resolve(process.env.HOME, '.ssh', 'id_rsa'),
+		privateKey: config.getValue('keynames'),
 	})
 
 	const { stdout } = await execSsh(ssh, 'cat ~/app/.env')
@@ -30,7 +30,7 @@ async function putEnv({ server, env }) {
 	await ssh.connect({
 		host: server.addresses.public[0],
 		username: 'root',
-		privateKey: path.resolve(process.env.HOME, '.ssh', 'id_rsa'),
+		privateKey: config.getValue('keynames'),
 	})
 
 	await ssh.execCommand('echo > ~/app/.env')

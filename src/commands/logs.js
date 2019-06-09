@@ -16,7 +16,7 @@ async function showLogsFrom({ server, publicIP, follow }) {
 	await ssh.connect({
 		host: publicIP,
 		username: 'root',
-		privateKey: path.resolve(process.env.HOME, '.ssh', 'id_rsa'),
+		privateKey: config.getValue('keynames'),
 	})
 
 	debug(
