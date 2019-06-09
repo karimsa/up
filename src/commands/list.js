@@ -7,6 +7,7 @@ import chalk from 'chalk'
 
 import { fetchServers } from './scale'
 import * as config from '../config'
+import { getLoadBalancer } from '../loadbalancers'
 
 export async function listServers({ target }) {
 	const name = config.getLocal('pkg.name')
@@ -17,11 +18,21 @@ export async function listServers({ target }) {
 		throw new Error(`Please specify a valid target environment`)
 	}
 
+	console.log(`> Application servers:`)
 	for (const server of await fetchServers({ name, target })) {
 		console.log(
-			`> ${chalk.bold(server.name)} - ${chalk.green(server.status)} (${
+			` - ${chalk.bold(server.name)} - ${chalk.green(server.status)} (${
 				server.id
 			} - ${server.addresses.public[0]})`,
 		)
 	}
+
+	console.log()
+	const loadbalancer = await getLoadBalancer({ name, target })
+	console.log(`> Load balancer:`)
+	console.log(
+		` - ${chalk.bold(loadbalancer.name)} - ${chalk.green(
+			loadbalancer.status,
+		)} (${loadbalancer.ip})`,
+	)
 }
