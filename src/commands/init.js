@@ -95,7 +95,12 @@ export async function init({ target, fqdn }) {
 	}
 
 	const loadbalancer = await (async function() {
-		const lb = await getLoadBalancer({ name, target })
+		let lb = await getLoadBalancer({ name, target })
+		while (lb && !lb.ip) {
+			await sleep(1000)
+			lb = await getLoadBalancer({ name, target })
+		}
+
 		if (lb) {
 			console.log(
 				`> Found loadbalancer: ${chalk.bold(lb.name)} (${chalk.green(lb.ip)})`,
