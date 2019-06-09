@@ -48,6 +48,9 @@ export function getGlobal(key) {
 	if (key === 'defaultProvider') {
 		return 'digitalocean'
 	}
+	if (key === 'keynames' && process.env.UP_SSH_KEY) {
+		return [process.env.UP_SSH_KEY]
+	}
 	return _.get(globalConfig, key)
 }
 
