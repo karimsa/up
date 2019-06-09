@@ -13,7 +13,8 @@ export function getAuthentication() {
 		config.getLocal('pkg.up.provider') || config.getGlobal('defaultProvider')
 	switch (provider) {
 		case 'digitalocean':
-			const token = config.getGlobal('auth.digitalocean.apiKey')
+			const token =
+				config.getGlobal('auth.digitalocean.apiKey') || process.env.DO_TOKEN
 			if (token) {
 				return { provider, token }
 			}
