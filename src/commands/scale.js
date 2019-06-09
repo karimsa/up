@@ -48,23 +48,34 @@ export async function fetchServers({ name, target }) {
 }
 
 export async function initServer({ name, target, instanceNumber }) {
+	const keynames = config.getLocal('keynames') || config.getGlobal('keynames')
+	if (!keynames) {
+		throw new Error(`No configured SSH keys were found`)
+	}
+
 	const serverName = createServerName(name, target, instanceNumber)
 	console.log(`> Creating server: ${chalk.bold(serverName)}`)
-	const serverInfo = await pkgcloud.createServer({
-		name: serverName,
-		image: 'ubuntu-18-04-x64',
-		flavor: 's-1vcpu-2gb',
-		region: 'tor1',
-		keyname: config.getLocal('keynames') || config.getGlobal('keynames'),
-	})
+	return setupServer(
+		await pkgcloud.createServer({
+			name: serverName,
+			image: 'ubuntu-18-04-x64',
+			flavor: 's-1vcpu-2gb',
+			region: 'tor1',
+			keyname: keynames,
+		}),
+	)
+}
 
-	console.log(`> Waiting for server: ${chalk.bold(serverName)}`)
+export async function setupServer(serverInfo) {
+	console.log(`> Waiting for server: ${chalk.bold(serverInfo.name)}`)
 	while (true) {
 		const server = await pkgcloud.getServer(serverInfo.id)
 		const [publicIP] = server.addresses.public
-		if (publicIP) {
+		if (publicIP && server.status === 'RUNNING') {
 			debug(
-				`Identified server ${serverName} to have ip ${chalk.green(publicIP)}`,
+				`Identified server ${serverInfo.name} to have ip ${chalk.green(
+					publicIP,
+				)}`,
 			)
 			serverInfo.full = server
 			serverInfo.addresses = server.addresses
@@ -85,13 +96,20 @@ export async function initServer({ name, target, instanceNumber }) {
 			})
 			break
 		} catch (err) {
-			debug(`Connection to ${serverName} failed: ${err.stack}`)
+			debug(`Connection to ${serverInfo.name} failed: ${err.stack}`)
 			await sleep(1000)
 		}
 	}
 
-	console.log(`> Setting up server: ${chalk.bold(serverName)}`)
-	debug(`Connected to server: ${serverName}`)
+	console.log(`> Setting up server: ${chalk.bold(serverInfo.name)}`)
+	debug(`Connected to server: ${serverInfo.name}`)
+	debug(
+		await execSsh(client, `apt-get update -yq --fix-missing`, {
+			env: {
+				DEBIAN_FRONTEND: 'noninteractive',
+			},
+		}),
+	)
 	debug(
 		await execSsh(client, `apt-get install -yq git build-essential`, {
 			env: {
@@ -150,7 +168,7 @@ export async function initServer({ name, target, instanceNumber }) {
 		),
 	)
 
-	debug(`Disconnecting from server: ${serverName}`)
+	debug(`Disconnecting from server: ${serverInfo.name}`)
 	await client.dispose()
 
 	return serverInfo.full
