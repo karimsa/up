@@ -14,21 +14,14 @@ const request = require('request-promise-native').defaults({
 	},
 })
 
-export async function getCertificates({ domain }) {
-	return (await request(`/`)).certificates.filter(cert => {
+export async function getCertificate({ domain }) {
+	return (await request(`/`)).certificates.find(cert => {
 		return cert.dns_names.includes(domain)
 	})
 }
 
 export async function createCertificate({ domain }) {
-	const name = (function() {
-		const d = domain.split('.').slice()
-		if (d.length === 3) {
-			d.shift()
-		}
-		return d.join('-')
-	})()
-
+	const name = domain.split('.').join('-')
 	const body = {
 		name,
 		dns_names: [domain],

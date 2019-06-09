@@ -29,10 +29,14 @@ export async function listServers({ target }) {
 
 	console.log()
 	const loadbalancer = await getLoadBalancer({ name, target })
-	console.log(`> Load balancer:`)
-	console.log(
-		` - ${chalk.bold(loadbalancer.name)} - ${chalk.green(
-			loadbalancer.status,
-		)} (${loadbalancer.ip})`,
-	)
+	if (loadbalancer) {
+		console.log(`> Load balancer:`)
+		console.log(
+			` - ${chalk.bold(loadbalancer.name)} - ${chalk.green(
+				loadbalancer.status,
+			)} (${loadbalancer.ip})`,
+		)
+	} else {
+		console.log(`> No load balancers found.`)
+	}
 }

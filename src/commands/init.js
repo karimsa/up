@@ -20,7 +20,7 @@ import {
 import { debug } from '../debug'
 import { getDomains, addDomain, getRecords, addRecord } from '../dns'
 import { createSSHKey } from '../ssh-keys'
-import { getCertificates, createCertificate } from '../certificates'
+import { getCertificate, createCertificate } from '../certificates'
 
 export async function init({ target, fqdn }) {
 	const name = config.getLocal('pkg.name')
@@ -54,12 +54,15 @@ export async function init({ target, fqdn }) {
 			throw new Error(`No ssh key found at: ${defaultKeyPath}`)
 		}
 
+		console.log(`> Creating SSH key for ${os.hostname()}`)
 		const { id } = await createSSHKey({
 			name: `up-cli on ${os.hostname()}`,
 			key: fs.readFileSync(defaultKeyPath, 'utf8'),
 		})
 		config.setGlobal('keynames', [id])
 		await config.flush()
+	} else {
+		console.log(`> Found SSH keys: %j`, keynames)
 	}
 
 	const servers = await fetchServers({ name, target })
@@ -71,15 +74,19 @@ export async function init({ target, fqdn }) {
 				instanceNumber: 1,
 			})
 		}
+
+		console.log(`> Found ${servers.length} servers`)
 		return servers[0]
 	})()
 
 	const certificate = await (async function() {
-		const certs = await getCertificates({ domain: targetHost })
-		if (certs.length === 0) {
+		const cert = await getCertificate({ domain: targetHost })
+		if (!cert) {
+			console.log(`> Registering new certificate for: ${targetHost}`)
 			return createCertificate({ domain: targetHost })
 		}
-		return certs[0]
+		console.log(`> Found certificate: ${chalk.bold(cert.name)}`)
+		return cert
 	})()
 	if (!certificate) {
 		throw new Error(
@@ -90,7 +97,9 @@ export async function init({ target, fqdn }) {
 	const loadbalancer = await (async function() {
 		const lb = await getLoadBalancer({ name, target })
 		if (lb) {
-			console.log(`> Found loadbalancer: ${chalk.bold(lb.name)}`)
+			console.log(
+				`> Found loadbalancer: ${chalk.bold(lb.name)} (${chalk.green(lb.ip)})`,
+			)
 			return lb
 		}
 

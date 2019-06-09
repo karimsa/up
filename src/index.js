@@ -30,7 +30,7 @@ const argv = minimist(process.argv.slice(2), {
 	},
 
 	string: ['target'],
-	boolean: ['help', 'verbose', 'follow', 'all', 'skipBuild'],
+	boolean: ['help', 'verbose', 'follow', 'all', 'skip-build'],
 })
 const command = argv._[0] || 'deploy'
 
@@ -66,7 +66,7 @@ async function main() {
 
 	switch (command) {
 		case 'deploy':
-			return deploy({ target, skipBuild: argv.skipBuild })
+			return deploy({ target, skipBuild: argv['skip-build'] })
 
 		case 'login':
 			return login()
