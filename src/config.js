@@ -54,7 +54,7 @@ export function getGlobal(key) {
 	}
 	if (key === 'keynames') {
 		if (process.env.UP_SSH_KEY) {
-			return [process.env.UP_SSH_KEY]
+			return process.env.UP_SSH_KEY
 		}
 		return path.resolve(process.env.HOME, '.ssh', 'id_rsa')
 	}
