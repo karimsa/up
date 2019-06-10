@@ -9,7 +9,7 @@ import dotenv from 'dotenv'
 import * as config from '../config'
 import { execSsh, fetchServers, connectServer } from './scale'
 
-async function readEnv({ server }) {
+export async function readEnv({ server }) {
 	const ssh = await connectServer(server)
 
 	const { stdout } = await execSsh(ssh, 'cat ~/app/.env')

@@ -18,6 +18,7 @@ import {
 	restart,
 	init,
 	setup,
+	exec,
 } from './commands'
 
 const argv = minimist(process.argv.slice(2), {
@@ -127,6 +128,9 @@ async function main() {
 				throw new Error(`setup requires an instance ID`)
 			}
 			return setup({ id: argv._[1] })
+
+		case 'exec':
+			return exec({ target, argv })
 
 		default:
 			console.error(`Unknown command: '${command}'`)
