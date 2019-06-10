@@ -17,12 +17,6 @@ function loadConfig(projectDirectory = process.cwd()) {
 
 	try {
 		const pkg = require(path.join(projectDirectory, 'package.json'))
-		console.log(
-			`> Located project directory: ${projectDirectory.replace(
-				process.env.HOME,
-				'~',
-			)}`,
-		)
 		return {
 			projectDirectory,
 			pkg: {
@@ -39,6 +33,12 @@ const localConfig = loadConfig()
 const globalConfig = rc('up')
 
 export const projectDirectory = localConfig.projectDirectory
+debug(
+	`> Located project directory: ${projectDirectory.replace(
+		process.env.HOME,
+		'~',
+	)}`,
+)
 
 export function getLocal(key) {
 	return _.get(localConfig, key)
