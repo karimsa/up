@@ -47,8 +47,14 @@ export async function env({ argv, target }) {
 	if (action === 'set') {
 		for (const server of servers) {
 			const env = await readEnv({ server })
+			const oldValue = env[key]
 			env[key] = value
 			await putEnv({ server, env })
+			console.log(
+				`[${chalk.bold(server.name)}] ${chalk.red(oldValue)} => ${chalk.green(
+					env[key],
+				)}`,
+			)
 		}
 	} else if (action === 'get' && all) {
 		for (const server of servers) {
