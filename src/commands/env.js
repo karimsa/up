@@ -40,6 +40,10 @@ export async function env({ argv, target }) {
 	const action = argv._.length === 3 ? 'set' : 'get'
 	const all = argv.all
 
+	if (servers.length === 0) {
+		throw new Error(`No servers found for environment: ${target}!`)
+	}
+
 	if (action === 'set') {
 		for (const server of servers) {
 			const env = await readEnv({ server })
