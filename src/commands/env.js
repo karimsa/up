@@ -37,7 +37,7 @@ export async function env({ argv, target }) {
 	const servers = await fetchServers({ name, target })
 	const key = argv._[1]
 	const value = argv._[2]
-	const action = key && value ? 'set' : 'get'
+	const action = argv._.length === 3 ? 'set' : 'get'
 	const all = argv.all
 
 	if (action === 'set') {
