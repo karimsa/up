@@ -8,6 +8,7 @@ import _ from 'lodash'
 import sleep from 'then-sleep'
 import SSHClient from 'node-ssh'
 import * as path from 'path'
+import { fs } from 'mz'
 
 import * as config from '../config'
 import * as pkgcloud from '../pkgcloud'
@@ -154,12 +155,9 @@ export async function setupServer(serverInfo) {
 			`mkdir -p ~/app && echo "const server = require('http').createServer((_, res) => res.end('Hello, world!')).listen(process.env.PORT, () => console.log('Listening :' + server.address().port))" > ~/app/app.js`,
 		),
 	)
-	debug(
-		await execSsh(
-			client,
-			`echo "require('dotenv/config'),require('./app')" > ~/app/index.js`,
-		),
-	)
+
+	await client.putFile(path.resolve(__dirname, '..', 'bootstrap.js'), 'app/index.js')
+
 	debug(
 		await execSsh(
 			client,
@@ -170,7 +168,7 @@ export async function setupServer(serverInfo) {
 		await client.putFile(path.resolve(process.env.HOME, '.npmrc'), '.npmrc'),
 	)
 	debug(
-		await execSsh(client, 'cd ~/app && source ~/.nvm/nvm.sh && npm i dotenv'),
+		await execSsh(client, 'cd ~/app && source ~/.nvm/nvm.sh && npm i dotenv git+https://github.com/karimsa/pretty-time.git'),
 	)
 	debug(
 		await execSsh(
@@ -183,7 +181,7 @@ export async function setupServer(serverInfo) {
 	debug(
 		await execSsh(
 			client,
-			`ufw allow 80 && ufw allow OpenSSH && yes | ufw enable`,
+			`ufw allow 80 && ufw allow 81 && ufw allow OpenSSH && yes | ufw enable`,
 		),
 	)
 

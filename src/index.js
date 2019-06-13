@@ -19,6 +19,7 @@ import {
 	init,
 	setup,
 	exec,
+	status,
 } from './commands'
 
 const argv = minimist(process.argv.slice(2), {
@@ -131,6 +132,9 @@ async function main() {
 
 		case 'exec':
 			return exec({ target, argv })
+
+		case 'status':
+			return status({ target })
 
 		default:
 			console.error(`Unknown command: '${command}'`)

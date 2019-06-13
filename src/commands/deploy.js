@@ -8,9 +8,11 @@ import _ from 'lodash'
 import Bundler from 'parcel-bundler'
 import * as path from 'path'
 import { fs, child_process } from 'mz'
+import * as crypto from 'crypto'
 import * as tmp from 'tmp-promise'
 import * as ansi from 'ansi-escapes'
 import * as rimraf from 'rimraf'
+import prettyTime from 'pretty-time'
 
 import * as config from '../config'
 import { debug } from '../debug'
@@ -29,7 +31,14 @@ async function deployToServer({ server, dist }) {
 	}
 	const main = files[0]
 
+	const version = config.getLocal('pkg.version')
+	if (!version) {
+		throw new Error(`No application version specified in package.json!`)
+	}
+	console.log(`> Application version: ${chalk.magenta(version)}`)
+
 	debug(`Uploading ${main} to ${server.name}`)
+	await ssh.putFile(path.resolve(__dirname, '..', 'bootstrap.js'), 'app/index.js')
 	await ssh.putFile(path.join(dist, main), `app/app.js`)
 	await ssh.putFile(
 		path.join(config.projectDirectory, 'package.json'),
@@ -120,7 +129,7 @@ export async function deploy({ target, skipBuild }) {
 	const main = config.getLocal('pkg.main') || 'index.js'
 	process.stdout.write(`> Bundling: ${main} ...`)
 	const dist = await tmp.dir()
-	const startTime = Date.now()
+	const timer = prettyTime.start()
 	const bundler = new Bundler(path.resolve(config.projectDirectory, main), {
 		target: 'node',
 		bundleNodeModules: false,
@@ -130,10 +139,13 @@ export async function deploy({ target, skipBuild }) {
 		logLevel: 2,
 	})
 	await bundler.bundle()
+	const bundleTime = timer.end()
+	const sha = crypto.createHash('sha1').update(fs.readFileSync(path.join(dist.path, path.basename(main)), 'utf8'))
+	const hash = sha.digest('hex').substr(0, 10)
 	console.log(
-		`\r> Bundled in ${chalk.green(Date.now() - startTime + 'ms')}.${
-			ansi.eraseEndLine
-		}`,
+		`\r> Bundled in ${chalk.green(bundleTime)}.${
+		ansi.eraseEndLine
+		} (${chalk.cyan(hash)})`,
 	)
 
 	// Grab current servers off digitalocean

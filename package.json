@@ -38,6 +38,7 @@
 		"node-ssh": "^6.0.0",
 		"parcel-bundler": "^1.12.3",
 		"pkgcloud": "^2.0.0",
+		"pretty-time": "git+https://github.com/karimsa/pretty-time.git",
 		"prompts": "^2.1.0",
 		"rc": "^1.2.8",
 		"request": "^2.88.0",
