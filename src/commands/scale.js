@@ -156,7 +156,10 @@ export async function setupServer(serverInfo) {
 		),
 	)
 
-	await client.putFile(path.resolve(__dirname, '..', 'bootstrap.js'), 'app/index.js')
+	await client.putFile(
+		path.resolve(__dirname, '..', 'bootstrap.js'),
+		'app/index.js',
+	)
 
 	debug(
 		await execSsh(
@@ -168,7 +171,10 @@ export async function setupServer(serverInfo) {
 		await client.putFile(path.resolve(process.env.HOME, '.npmrc'), '.npmrc'),
 	)
 	debug(
-		await execSsh(client, 'cd ~/app && source ~/.nvm/nvm.sh && npm i dotenv git+https://github.com/karimsa/pretty-time.git'),
+		await execSsh(
+			client,
+			'cd ~/app && source ~/.nvm/nvm.sh && npm i dotenv git+https://github.com/karimsa/pretty-time.git',
+		),
 	)
 	debug(
 		await execSsh(
@@ -181,7 +187,7 @@ export async function setupServer(serverInfo) {
 	debug(
 		await execSsh(
 			client,
-			`ufw allow 80 && ufw allow 81 && ufw allow OpenSSH && yes | ufw enable`,
+			`ufw allow 80; ufw allow 81; ufw allow OpenSSH; yes | ufw enable`,
 		),
 	)
 

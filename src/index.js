@@ -29,9 +29,10 @@ const argv = minimist(process.argv.slice(2), {
 		verbose: 'v',
 		follow: 'f',
 		all: 'a',
+		interval: 'i',
 	},
 
-	string: ['target'],
+	string: ['target', 'interval'],
 	boolean: ['help', 'verbose', 'follow', 'all', 'skip-build'],
 })
 const command = argv._[0] || 'deploy'
@@ -49,6 +50,7 @@ function showUsage() {
 	console.log('\t-t, --target [target]\tthe env you wish to deploy to')
 	console.log('\t-v, --verbose\tenable verbose logging')
 	console.log('\t-f, --follow\ttail the logs')
+	console.log('\t-i, --interval\trefresh interval for status')
 	console.log('')
 	process.exit(1)
 }
@@ -134,7 +136,7 @@ async function main() {
 			return exec({ target, argv })
 
 		case 'status':
-			return status({ target })
+			return status({ target, interval: argv.interval })
 
 		default:
 			console.error(`Unknown command: '${command}'`)

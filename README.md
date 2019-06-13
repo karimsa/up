@@ -104,6 +104,21 @@ Here's some examples:
 $ up list
 ```
 
+### Check the status of a deployment
+
+```shell
+# Lists all servers & their current status including time
+# since last deployment and the running application version
+$ up status
+Number of servers: 1
+
+ - myapp-development-1 [116845563 - RUNNING]:
+        IP: 123.456.789.100
+        Uptime: 6m 6s
+        App version: 0.1.1
+        Bundle hash: 887b7d69ae
+```
+
 ### Execute a command within a virtual environment
 
 up comes with a utility command for you to run any command hoisted into a virtual environment that is composed of the same environment variables as your application cluster.
