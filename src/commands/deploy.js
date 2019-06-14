@@ -38,7 +38,10 @@ async function deployToServer({ server, dist }) {
 	console.log(`> Application version: ${chalk.magenta(version)}`)
 
 	debug(`Uploading ${main} to ${server.name}`)
-	await ssh.putFile(path.resolve(__dirname, '..', 'bootstrap.js'), 'app/index.js')
+	await ssh.putFile(
+		path.resolve(__dirname, '..', 'bootstrap.js'),
+		'app/index.js',
+	)
 	await ssh.putFile(path.join(dist, main), `app/app.js`)
 	await ssh.putFile(
 		path.join(config.projectDirectory, 'package.json'),
@@ -134,17 +137,20 @@ export async function deploy({ target, skipBuild }) {
 		target: 'node',
 		bundleNodeModules: false,
 		watch: false,
+		minify: false,
 		outDir: dist.path,
 		sourceMaps: false,
 		logLevel: 2,
 	})
 	await bundler.bundle()
 	const bundleTime = timer.end()
-	const sha = crypto.createHash('sha1').update(fs.readFileSync(path.join(dist.path, path.basename(main)), 'utf8'))
+	const sha = crypto
+		.createHash('sha1')
+		.update(fs.readFileSync(path.join(dist.path, path.basename(main)), 'utf8'))
 	const hash = sha.digest('hex').substr(0, 10)
 	console.log(
 		`\r> Bundled in ${chalk.green(bundleTime)}.${
-		ansi.eraseEndLine
+			ansi.eraseEndLine
 		} (${chalk.cyan(hash)})`,
 	)
 
