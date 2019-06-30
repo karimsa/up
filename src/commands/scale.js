@@ -8,7 +8,6 @@ import _ from 'lodash'
 import sleep from 'then-sleep'
 import SSHClient from 'node-ssh'
 import * as path from 'path'
-import { fs } from 'mz'
 
 import * as config from '../config'
 import * as pkgcloud from '../pkgcloud'
@@ -75,8 +74,15 @@ export async function initServer({ name, target, instanceNumber }) {
 		throw new Error(`No configured SSH keys were found`)
 	}
 
+	const instanceSize =
+		config.getLocal(`pkg.up.targets.${target}.size`) || 's-1vcpu-2gb'
 	const serverName = createServerName(name, target, instanceNumber)
-	console.log(`> Creating server: ${chalk.bold(serverName)}`)
+
+	console.log(
+		`> Creating server: ${chalk.bold(serverName)} (of size ${chalk.magenta(
+			instanceSize,
+		)})`,
+	)
 	return setupServer(
 		await pkgcloud.createServer({
 			name: serverName,

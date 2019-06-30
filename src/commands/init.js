@@ -32,7 +32,11 @@ export async function init({ target, fqdn }) {
 		throw new Error(`Target environment is required`)
 	}
 
-	fqdn = String(fqdn || config.getLocal(`pkg.up.targets.${target}`)).split('.')
+	fqdn = String(
+		fqdn ||
+			config.getLocal(`pkg.up.targets.${target}.domain`) ||
+			config.getLocal(`pkg.up.targets.${target}`),
+	).split('.')
 	if (fqdn.length === 1 && fqdn[0] === 'undefined') {
 		throw new Error(`Failed to find domain target for ${target}`)
 	}
