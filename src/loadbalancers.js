@@ -3,8 +3,11 @@
  * @copyright 2019-present Karim Alibhai. All rights reserved.
  */
 
+import chalk from 'chalk'
+
 import * as config from './config'
 import { debug } from './debug'
+import { fetchServers } from './commands/scale'
 
 export const createLBName = ({ name, target }) =>
 	`${name.replace(/^\@([a-zA-Z]+)\/([a-zA-Z\-_]+)$/, '$1-$2')}-${target}`
@@ -33,6 +36,33 @@ export async function removeDropletFromBalancer({ name, target, droplet }) {
 			droplet_ids: load_balancer.droplet_ids.filter(id => id !== droplet),
 		},
 	})
+}
+
+export async function syncLoadBalancer({ name, target }) {
+	const load_balancer = await getLoadBalancer({ name, target })
+	console.log(
+		`> Found loadbalancer for ${chalk.bold(name)}: ${chalk.green(
+			load_balancer.name,
+		)}`,
+	)
+	const droplet_ids = (await fetchServers({ name, target })).map(s => s.id)
+
+	const strLBIds = JSON.stringify(load_balancer.droplet_ids.sort())
+	const strDropletIds = JSON.stringify(droplet_ids.sort())
+
+	console.log(` - Loadbalancer instances: ${chalk.green(strLBIds)}`)
+	console.log(` - Droplets: ${chalk.red(strDropletIds)}`)
+
+	if (strLBIds !== strDropletIds) {
+		console.log(`> Loadbalancer is out of sync. Updating ...`)
+		load_balancer.droplet_ids = droplet_ids
+		await request.put(`/${load_balancer.id}`, {
+			body: {
+				name: load_balancer.name,
+				droplet_ids,
+			},
+		})
+	}
 }
 
 export async function createLoadBalancer({

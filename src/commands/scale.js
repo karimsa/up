@@ -12,6 +12,7 @@ import * as path from 'path'
 import * as config from '../config'
 import * as pkgcloud from '../pkgcloud'
 import { debug } from '../debug'
+import { syncLoadBalancer } from '../loadbalancers'
 
 export const createServerName = (name, target, num) =>
 	`${name.replace(/^@([a-zA-Z]+)\/([a-zA-Z\-_]+)$/, '$1-$2')}-${target}-${num}`
@@ -46,16 +47,12 @@ export async function connectServer(server) {
 	return ssh
 }
 
-let serverList
 export async function fetchServers({ name, target }) {
 	if (!name || !target) {
 		throw new Error(`'name' & 'target' are required parameters!`)
 	}
-	if (serverList) {
-		return serverList
-	}
 
-	const servers = (serverList = [])
+	const servers = []
 	for (const server of await pkgcloud.getServers()) {
 		const matches = server.name.match(
 			new RegExp(createServerName(name, target, '([0-9]+)')),
@@ -87,9 +84,11 @@ export async function initServer({ name, target, instanceNumber }) {
 		await pkgcloud.createServer({
 			name: serverName,
 			image: 'ubuntu-18-04-x64',
-			flavor: 's-1vcpu-2gb',
+			flavor: instanceSize,
 			region: 'tor1',
 			keyname: keynames,
+			backups: true,
+			monitoring: true,
 		}),
 	)
 }
@@ -119,9 +118,6 @@ export async function setupServer(serverInfo) {
 			client = await connectServer(serverInfo)
 			break
 		} catch (err) {
-			if (!String(err).match(/Connection refused|Connection timed out/)) {
-				throw err
-			}
 			debug(`Connection to ${serverInfo.name} failed: ${err.stack}`)
 			await sleep(1000)
 		}
@@ -261,4 +257,6 @@ export async function scale({ action, size, target }) {
 		}
 		await Promise.all(goals)
 	}
+
+	await syncLoadBalancer({ name, target })
 }

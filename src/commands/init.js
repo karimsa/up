@@ -16,6 +16,7 @@ import {
 	createLBName,
 	getLoadBalancer,
 	createLoadBalancer,
+	syncLoadBalancer,
 } from '../loadbalancers'
 import { debug } from '../debug'
 import { getDomains, addDomain, getRecords, addRecord } from '../dns'
@@ -107,8 +108,9 @@ export async function init({ target, fqdn }) {
 
 		if (lb) {
 			console.log(
-				`> Found loadbalancer: ${chalk.bold(lb.name)} (${chalk.green(lb.ip)})`,
+				`> Found loadbalancer: ${chalk.bold(lb.name)} (${chalk.green(lb.ip)}).`,
 			)
+			await syncLoadBalancer({ name, target })
 			return lb
 		}
 
